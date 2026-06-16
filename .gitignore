@@ -1,0 +1,96 @@
+# ============================================
+# LaunchGate .gitignore
+# ============================================
+
+# ===== 環境變量 & 敏感配置 =====
+.env
+.env.local
+.env.*.local
+# .env.example 應該提交到版本控制，方便團隊參考
+
+# ===== Node.js 依賴（完全排除） =====
+node_modules/
+**/node_modules/
+
+# ===== 構建輸出 =====
+build/
+packages/server/build/
+packages/server/dist/
+packages/web/.next/
+packages/web/out/
+packages/web/dist/
+cloudflare/workers/dist/
+
+# ===== 調試 & 日誌 =====
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ===== 測試 =====
+coverage/
+*.lcov
+.nyc/
+snapshots/
+
+# ===== 臨時 & 測試腳本 =====
+scripts/test-*.{js,mjs,cjs,ts}
+packages/server/test-*.{js,mjs,cjs,ts}
+clean-test-files.sh
+
+# ===== 操縱系統文件 =====
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
+
+# ===== IDE =====
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ===== Docker =====
+docker-compose.override.yml
+
+# ===== 本地數據 =====
+*.db
+*.sqlite
+*.sqlite3
+
+# ===== 臨時文件 =====
+tmp/
+temp/
+.cache/
+.parcel-cache/
+
+# ===== TypeScript =====
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ===== Cloudflare Workers =====
+.wrangler/
+
+# ===== Prisma =====
+prisma/migrations
+
+# ===== Windows =====
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ===== macOS =====
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+._*
+.AppleDouble
+.LSOverride

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "launchgate-live": {
+      "type": "sse",
+      "url": "https://launchgate-mcp.highl0516y.workers.dev/sse",
+      "headers": {
+        "Accept": "text/event-stream"
+      }
+    }
+  }
+}

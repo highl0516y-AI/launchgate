@@ -1,0 +1,117 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: launchgate
+      POSTGRES_USER: launchgate
+      POSTGRES_PASSWORD: launchgate_local_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./database/init-db.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U launchgate -d launchgate"]
+      interval: 5s
+      timeout: 5s
+      retries: 15
+
+  mcp-server:
+    build:
+      context: ./packages/server
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://launchgate:launchgate_local_dev@postgres:5432/launchgate"
+      NODE_ENV: development
+      LOG_LEVEL: debug
+      RESEND_API_KEY: ""
+      SUPABASE_URL: ""
+      SUPABASE_ANON_KEY: ""
+      SUPABASE_SERVICE_KEY: ""
+      GOOGLE_CLIENT_ID: ""
+      GOOGLE_CLIENT_SECRET: ""
+      GITHUB_CLIENT_ID: ""
+      GITHUB_CLIENT_SECRET: ""
+      APPLE_CLIENT_ID: ""
+      APPLE_TEAM_ID: ""
+      APPLE_KEY_ID: ""
+      APPLE_PRIVATE_KEY: ""
+      QQ_APP_ID: ""
+      WECHAT_APP_ID: ""
+      LINKEDIN_CLIENT_ID: ""
+      LINKEDIN_CLIENT_SECRET: ""
+      LINKEDIN_ACCESS_TOKEN: ""
+      TWITTER_API_KEY: ""
+      TWITTER_API_SECRET: ""
+      TWITTER_BEARER_TOKEN: ""
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXTAUTH_SECRET: change-this-to-a-random-string-in-production
+      PASSWORD_SALT: launchgate-dev-salt-2025
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./packages/server/src:/app/src:ro
+    command: npx tsx watch src/index.ts
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "--no-check-certificate", "http://localhost:3001/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  web:
+    build:
+      context: ./packages/web
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: "postgresql://launchgate:launchgate_local_dev@postgres:5432/launchgate"
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+      NEXT_PUBLIC_SUPABASE_URL: ""
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ""
+      MCP_SERVER_URL: http://mcp-server:3001
+      RESEND_API_KEY: ""
+      NODE_ENV: development
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mcp-server:
+        condition: service_started
+    volumes:
+      - ./packages/web/src:/app/src:ro
+    command: npx next dev --port 3000
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+
+  mailpit:
+    image: axllent/mailpit:latest
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    environment:
+      MP_MAX_RECEIVE: 1000
+
+volumes:
+  pg_data:
+  redis_data:
+
+networks:
+  default:
+    name: launchgate_net

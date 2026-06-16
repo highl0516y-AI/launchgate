@@ -1,0 +1,69 @@
+/* ============================================
+ * LaunchGate Web — 全局樣式 & Tailwind 配置
+ * 設計語言：宇宙黑 + 電磁紫 + 星光
+ * ============================================ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --primary: #6366f1;
+    --primary-dark: #4f46e5;
+    --primary-light: #818cf8;
+    --accent: #f59e0b;
+    --accent-gold: #C8A96E;
+    --accent-light: #E8D5B7;
+    --bg-dark: #050505;
+    --bg-card: #0a0a0a;
+    --bg-card-hover: #111111;
+    --text-primary: #f1f5f9;
+    --text-secondary: #94a3b8;
+    --border-color: rgba(255, 255, 255, 0.08);
+    --border-hover: rgba(255, 255, 255, 0.15);
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg-dark);
+    color: var(--text-primary);
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-semibold py-3 px-6 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-primary/25;
+  }
+  .btn-secondary {
+    @apply bg-bg-card hover:bg-slate-600 text-text-primary border border-slate-600 font-semibold py-3 px-6 rounded-xl transition-all duration-200;
+  }
+  .glass {
+    background: rgba(10, 10, 10, 0.6);
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+  .glass-hover {
+    transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .glass-hover:hover {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: var(--border-hover);
+  }
+  .glass-card {
+    @apply bg-bg-card/80 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl;
+  }
+  .gradient-text {
+    @apply bg-gradient-to-r from-primary via-accent to-purple-500 bg-clip-text text-transparent;
+  }
+  .gradient-gold {
+    background: linear-gradient(135deg, #C8A96E, #E8D5B7, #C8A96E);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradientShift 3s ease infinite;
+  }
+}

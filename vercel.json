@@ -1,0 +1,14 @@
+{
+  "$schema": "https://openapi-vercel-pages.vercel.app/schema.json",
+  "envGroups": [
+    {
+      "name": "LaunchGate",
+      "environmentVariables": [
+        { "key": "NEXT_PUBLIC_APP_URL", "value": "https://launchgate.ai" },
+        { "key": "NEXT_PUBLIC_SUPABASE_URL", "value": "https://unyebouiuuwvtiyaqbyq.supabase.co" },
+        { "key": "NEXT_PUBLIC_SUPABASE_ANON_KEY", "value": "sb_publishable_8LtMogiuX8NCKeVlfymAJA_L2_tJ6sm" },
+        { "key": "MCP_SERVER_URL", "value": "https://launchgate-mcp.highl0516y.workers.dev/mcp" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,396 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String    @id @default(uuid())
+  name        String
+  email       String    @unique
+  avatar      String?
+  role        Role      @default(STARTUP)
+  bio         String?
+  company     String?
+  website     String?
+  location    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  organizedEvents     Event[]              @relation("EventOrganizer")
+  pitches             Pitch[]              @relation("PitchPresenter")
+  sentConnections     Connection[]         @relation("ConnectionFrom")
+  receivedConnections Connection[]         @relation("ConnectionTo")
+  sentFollowups       FollowUp[]           @relation("FollowUpSender")
+  receivedFollowups   FollowUp[]           @relation("FollowUpTarget")
+  startup             Startup?
+  votes               Vote[]
+  demoVotes           DemoVote[]
+  interests           UserInterest[]
+  communityPosts      CommunityPost[]      @relation("PostAuthor")
+  authoredResources   Resource[]           @relation("ResourceAuthor")
+  attendeeRecords     Attendee[]
+  mentorshipSent      MentorshipRequest[]  @relation("MentorRelation")
+  mentorshipReceived  MentorshipRequest[]  @relation("MenteeRelation")
+
+  @@map("users")
+}
+
+enum Role {
+  STARTUP
+  INVESTOR
+  ORGANIZER
+  ADMIN
+  MENTOR
+}
+
+model Event {
+  id           String      @id @default(uuid())
+  title        String
+  description  String
+  coverImage   String?
+  startTime    DateTime
+  endTime      DateTime
+  location     String?
+  virtualUrl   String?
+  maxAttendees Int         @default(100)
+  status       EventStatus @default(DRAFT)
+  organizerId  String
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  organizer User       @relation("EventOrganizer", fields: [organizerId], references: [id])
+  attendees Attendee[]
+  pitches   Pitch[]
+  topics    EventTopic[]
+
+  @@map("events")
+}
+
+enum EventStatus {
+  DRAFT
+  PUBLISHED
+  REGISTRATION_OPEN
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+model Attendee {
+  id        String       @id @default(uuid())
+  userId    String
+  eventId   String
+  role      AttendeeRole @default(ATTENDEE)
+  checkedIn Boolean      @default(false)
+  joinedAt  DateTime     @default(now())
+
+  user  User  @relation(fields: [userId], references: [id])
+  event Event @relation(fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
+  @@map("attendees")
+}
+
+enum AttendeeRole {
+  ATTENDEE
+  SPEAKER
+  PANELIST
+}
+
+model EventTopic {
+  id      String @id @default(uuid())
+  name    String
+  eventId String
+  event   Event  @relation(fields: [eventId], references: [id])
+
+  @@unique([name, eventId])
+  @@map("event_topics")
+}
+
+model Startup {
+  id           String       @id @default(uuid())
+  name         String
+  tagline      String?
+  description  String
+  logo         String?
+  demoVideoUrl String?
+  websiteUrl   String?
+  foundingDate DateTime?
+  stage        StartupStage @default(IDEA)
+  sectorId     String?
+  founderId    String?      @unique
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  founder User?         @relation(fields: [founderId], references: [id])
+  pitches Pitch[]
+  sector  Sector?       @relation(fields: [sectorId], references: [id])
+  demos   Demo[]
+
+  @@map("startups")
+}
+
+enum StartupStage {
+  IDEA
+  SEED
+  PRE_SEED
+  SERIES_A
+  SERIES_B
+  GROWTH
+  IPO
+}
+
+model Sector {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  startups Startup[]
+
+  @@map("sectors")
+}
+
+model Pitch {
+  id              String      @id @default(uuid())
+  title           String
+  description     String
+  problem         String?
+  solution        String
+  marketSize      String?
+  businessModel   String?
+  traction        String?
+  askAmount       Float?
+  askEquity       Float?
+  deckUrl         String?
+  videoUrl        String?
+  rejectionReason String?
+  status          PitchStatus @default(DRAFT)
+  startupId       String
+  presenterId     String
+  eventId         String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  presenter User          @relation("PitchPresenter", fields: [presenterId], references: [id])
+  startup   Startup       @relation(fields: [startupId], references: [id])
+  event     Event?        @relation(fields: [eventId], references: [id])
+  votes     Vote[]
+  followups FollowUp[]
+  broadcastLogs BroadcastLog[]
+  mentorshipRequests MentorshipRequest[]
+
+  @@map("pitches")
+}
+
+enum PitchStatus {
+  DRAFT
+  SUBMITTED
+  APPROVED
+  REJECTED
+  PRESENTING
+  COMPLETED
+}
+
+model Vote {
+  id        String   @id @default(uuid())
+  pitchId   String
+  userId    String
+  value     Int
+  createdAt DateTime @default(now())
+
+  pitch Pitch @relation(fields: [pitchId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([userId, pitchId])
+  @@map("votes")
+}
+
+model Connection {
+  id        String           @id @default(uuid())
+  userId    String
+  targetId  String
+  type      ConnectionType
+  status    ConnectionStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+
+  fromUser User @relation("ConnectionFrom", fields: [userId], references: [id])
+  toUser   User @relation("ConnectionTo", fields: [targetId], references: [id])
+
+  @@unique([userId, targetId, type])
+  @@map("connections")
+}
+
+enum ConnectionType {
+  FOLLOW
+  CONNECT
+  MATCH
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  BLOCKED
+}
+
+model FollowUp {
+  id          String       @id @default(uuid())
+  type        FollowUpType
+  title       String
+  notes       String?
+  scheduledAt DateTime
+  completedAt DateTime?
+  pitchId     String?
+  userId      String
+  targetId    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  sender User     @relation("FollowUpSender", fields: [userId], references: [id])
+  target User?    @relation("FollowUpTarget", fields: [targetId], references: [id])
+  pitch  Pitch?   @relation(fields: [pitchId], references: [id])
+
+  @@map("followups")
+}
+
+enum FollowUpType {
+  EMAIL
+  CALL
+  MEETING
+  LINKEDIN
+  INVESTOR_UPDATE
+}
+
+model Demo {
+  id          String      @id @default(uuid())
+  title       String
+  description String?
+  videoUrl    String
+  duration    Int?
+  tags        String[]    @default([])
+  startupId   String?
+  status      DemoStatus  @default(PENDING_REVIEW)
+  createdAt   DateTime    @default(now())
+
+  startup Startup? @relation(fields: [startupId], references: [id])
+  votes   DemoVote[]
+
+  @@map("demos")
+}
+
+enum DemoStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+}
+
+model DemoVote {
+  id        String   @id @default(uuid())
+  demoId    String
+  userId    String
+  value     Int
+  createdAt DateTime @default(now())
+
+  demo Demo @relation(fields: [demoId], references: [id])
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([demoId, userId])
+  @@map("demo_votes")
+}
+
+model CommunityPost {
+  id        String   @id @default(uuid())
+  authorId  String
+  content   String
+  type      String   @default("general")
+  createdAt DateTime @default(now())
+
+  author User @relation("PostAuthor", fields: [authorId], references: [id])
+
+  @@map("community_posts")
+}
+
+model Resource {
+  id         String   @id @default(uuid())
+  title      String
+  url        String
+  type       String?
+  authorId   String
+  tags       String[] @default([])
+  viewsCount Int      @default(0)
+  createdAt  DateTime @default(now())
+
+  author User @relation("ResourceAuthor", fields: [authorId], references: [id])
+
+  @@map("resources")
+}
+
+model BroadcastLog {
+  id           String   @id @default(uuid())
+  pitchId      String?
+  platform     String
+  status       String   @default("PENDING")
+  content      String?
+  responseData Json?
+  createdAt    DateTime @default(now())
+
+  pitch Pitch? @relation(fields: [pitchId], references: [id])
+
+  @@map("broadcast_logs")
+}
+
+model Interest {
+  id    String   @id @default(uuid())
+  name  String   @unique
+  users UserInterest[]
+
+  @@map("interests")
+}
+
+model UserInterest {
+  userId     String
+  interestId String
+  user       User     @relation(fields: [userId], references: [id])
+  interest   Interest @relation(fields: [interestId], references: [id])
+
+  @@id([userId, interestId])
+  @@map("user_interests")
+}
+
+model MentorshipRequest {
+  id        String           @id @default(uuid())
+  menteeId  String
+  mentorId  String
+  pitchId   String?
+  message   String
+  status    MentorshipStatus @default(PENDING)
+  createdAt DateTime         @default(now())
+
+  mentee User    @relation("MenteeRelation", fields: [menteeId], references: [id])
+  mentor User    @relation("MentorRelation", fields: [mentorId], references: [id])
+  pitch  Pitch?  @relation(fields: [pitchId], references: [id])
+
+  @@map("mentorship_requests")
+}
+
+enum MentorshipStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  COMPLETED
+}
+
+model SocialConnection {
+  id          String   @id @default(uuid())
+  userId      String
+  platform    String
+  profileUrl  String?
+  username    String?
+  accessToken String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([userId, platform])
+  @@map("social_connections")
+}
